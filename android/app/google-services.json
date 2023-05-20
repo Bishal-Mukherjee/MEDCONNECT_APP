@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "981130236786",
+    "project_id": "medconnect-732fc",
+    "storage_bucket": "medconnect-732fc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:981130236786:android:e9d02a108fc4dd0f5c83eb",
+        "android_client_info": {
+          "package_name": "com.medconnect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "981130236786-kh2e6hou0eqmtmunvdt7olr08gsuhgvr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.medconnect",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "981130236786-lfr8dj94adgt6tr034ollqh21fcc7e7f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv7UbtgGd7VwFmP0SEjhuHDSLRz8WYDaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "981130236786-lfr8dj94adgt6tr034ollqh21fcc7e7f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

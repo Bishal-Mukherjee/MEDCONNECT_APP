@@ -1,0 +1,337 @@
+import { useState, useCallback, Fragment, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
+import AntDesignIcon from 'react-native-vector-icons/AntDesign';
+import {
+  Divider,
+  Stack,
+  Center,
+  useToast,
+  Alert,
+  VStack,
+  HStack,
+  Spinner,
+  Button,
+} from 'native-base';
+import dayjs from 'dayjs';
+import Doctor from '../../../assets/svg/doctor.svg';
+import { useNavigation } from '../../context/context';
+import { fetchAppointments } from '../../services/user';
+
+const AppointmentCard = ({ appointment }) => {
+  const { appointmentId, doctor, scheduledTime, status } = appointment;
+
+  const { navigation } = useNavigation();
+  const toast = useToast();
+
+  const handleClick = () => {
+    try {
+      if (status !== 'BOOKED') {
+        navigation.navigate('Messages', { appointmentId });
+      } else {
+        toast.show({
+          render: () => {
+            return (
+              <Alert w="100%" status="error">
+                <VStack space={2} flexShrink={1} w="100%">
+                  <HStack
+                    flexShrink={1}
+                    space={2}
+                    justifyContent="space-between">
+                    <HStack space={2} flexShrink={1}>
+                      <Alert.Icon mt="1" />
+                      <Text
+                        fontSize="md"
+                        color="#1f2937"
+                        style={{ fontFamily: 'Poppins-Regular' }}>
+                        Appointment not yet confirmed
+                      </Text>
+                    </HStack>
+                  </HStack>
+                </VStack>
+              </Alert>
+            );
+          },
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  return (
+    <Pressable onPress={() => handleClick()}>
+      <View
+        style={{
+          width: '95%',
+          height: 160,
+          backgroundColor: '#3b82f6',
+          borderRadius: 5,
+          elevation: 5,
+          margin: 10,
+          marginTop: 1,
+        }}>
+        <View
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+          <View>
+            <Stack
+              direction="row"
+              space={5}
+              style={{
+                width: '100%',
+                height: '75%',
+                justifyContent: 'center',
+                alignItems: 'center',
+                alignContent: 'center',
+              }}>
+              <Center size={20} bgColor="white" style={{ borderRadius: 100 }}>
+                <Doctor width="60%" />
+              </Center>
+
+              <Center
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                }}>
+                <HStack direction="column">
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontFamily: 'Poppins-Bold',
+                      fontSize: 20,
+                      textAlign: 'justify',
+                    }}>
+                    Dr. {doctor.name}
+                  </Text>
+                  <Text
+                    style={{
+                      color: '#d4d4d4',
+                      fontFamily: 'Poppins-Regular',
+                    }}>
+                    General Doctor
+                  </Text>
+                </HStack>
+
+                <MaterialIcon
+                  name="chevron-right"
+                  size={20}
+                  style={{ color: 'white', marginLeft: '10%' }}
+                />
+              </Center>
+            </Stack>
+
+            <Divider
+              style={{
+                width: '90%',
+                alignSelf: 'center',
+                backgroundColor: '#e5e5e5',
+              }}
+            />
+
+            <Stack
+              direction="row"
+              space={5}
+              style={{
+                width: '80%',
+                alignSelf: 'center',
+                marginTop: 5,
+              }}>
+              {status === 'BOOKED' ? (
+                <View style={{ width: '100%' }}>
+                  <Center
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}>
+                    <MaterialIcon
+                      name="pending-actions"
+                      size={20}
+                      color="white"
+                    />
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins-Regular',
+                        marginTop: 5,
+                        marginLeft: 5,
+                        color: 'white',
+                      }}>
+                      Confirmation pending
+                    </Text>
+                  </Center>
+                </View>
+              ) : (
+                <Fragment>
+                  <Center
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}>
+                    <AntDesignIcon name="calendar" size={20} color="white" />
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins-Regular',
+                        marginTop: 5,
+                        marginLeft: 5,
+                        color: 'white',
+                      }}>
+                      {dayjs(scheduledTime).format('DD/MM/YYYY')}
+                    </Text>
+                  </Center>
+                  <Center
+                    style={{
+                      marginLeft: 'auto',
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}>
+                    <MaterialIcon name="alarm" size={20} color="white" />
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins-Regular',
+                        marginTop: 5,
+                        marginLeft: 5,
+                        color: 'white',
+                      }}>
+                      {dayjs(scheduledTime).format('hh:mm')} -{' '}
+                      {dayjs(scheduledTime).add(15, 'minute').format('hh:mm A')}
+                    </Text>
+                  </Center>
+                </Fragment>
+              )}
+            </Stack>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
+const Appointments = () => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [showLoader, setShowLoader] = useState(false);
+  const [activeStatus, setActiveStatus] = useState('');
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    const response = handleFetchAppointments();
+    if (response) {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const handleFetchAppointments = async () => {
+    try {
+      setShowLoader(true);
+      if (activeStatus) {
+        const response = await fetchAppointments({ status: activeStatus });
+        setAppointments(response.appointments);
+      } else {
+        const response = await fetchAppointments();
+        setAppointments(response.appointments);
+      }
+      setShowLoader(false);
+      return true;
+    } catch (err) {
+      console.log(err);
+      return true;
+    }
+  };
+
+  const handleActiveStatus = tempStatus => {
+    try {
+      if (tempStatus === activeStatus) {
+        setActiveStatus('');
+      } else setActiveStatus(tempStatus);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    handleFetchAppointments();
+  }, [activeStatus]);
+
+  return (
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+      <View
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          margin: 10,
+          width: '95%',
+        }}>
+        {['BOOKED', 'CONFIRMED', 'COMPLETED'].map((st, index) => (
+          <View style={{ width: '30%', zIndex: 9999 }} key={index}>
+            <Button
+              style={{
+                backgroundColor: activeStatus === st ? '#002851' : '#e5e5e5',
+              }}
+              onPress={() => handleActiveStatus(st)}>
+              <Text
+                style={{
+                  fontFamily: 'Poppins-Regular',
+                  color: activeStatus === st ? 'white' : '#a3a3a3',
+                }}>
+                {st}
+              </Text>
+            </Button>
+          </View>
+        ))}
+      </View>
+      {showLoader ? (
+        <View>
+          <Spinner size={30} />
+        </View>
+      ) : (
+        <View>
+          <View style={{ margin: 10 }}>
+            <Text style={{ fontFamily: 'Poppins-Regular' }}>
+              Showing{' '}
+              {activeStatus ? (
+                <Text style={{ fontFamily: 'Poppins-Bold' }}>
+                  {activeStatus}
+                </Text>
+              ) : (
+                <Text style={{ fontFamily: 'Poppins-Bold' }}>ALL</Text>
+              )}{' '}
+              appointments
+            </Text>
+          </View>
+
+          {appointments?.map((appointment, index) => (
+            <AppointmentCard key={index} appointment={appointment} />
+          ))}
+        </View>
+      )}
+      {!showLoader && appointments?.length === 0 && (
+        <View>
+          <Text
+            style={{
+              fontFamily: 'Poppins-Regular',
+              textAlign: 'center',
+              fontSize: 20,
+            }}>
+            No appointments found
+          </Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+};
+
+export default Appointments;
